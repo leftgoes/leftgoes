@@ -1,3 +1,3 @@
 - Student
 - Python
-- (C#)
+- C#
