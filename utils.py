@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
-from lmfit import Model
-import numpy as np
 import time
+import numpy as np
 from typing import Callable
+from lmfit import Model
 
 T = float | np.ndarray
 
@@ -53,20 +53,28 @@ class Progress:
         self._checkpoints.append(perf)
         return perf
 
-    def print(self, progress: float, use_checkpoint: int = -1) -> str:
+    def string(self, progress: float, use_checkpoint: int = -1, print_string: bool = True, *, prefix: str = '', suffix: str = '', **kwargs) -> str:
         delta = time.perf_counter() - (self._start if use_checkpoint == -1 else self._checkpoints[use_checkpoint])
         string = self.fmt.format(bar=self.progressbar(progress),
                                  percent=100 * progress,
                                  dtime=datetime.now(),
                                  elapsed=str(timedelta(seconds=round(delta))),
-                                 remaining=str(timedelta(seconds=0 if progress == 0.0 else round(delta/progress))))
-        print(f'\r{string}', end="\n" if progress == 1.0 else "")
-    
+                                 remaining=str(timedelta(seconds=0 if progress == 0.0 else round(delta/progress))),
+                                 **kwargs)
+        if prefix != '':
+            string = f'{prefix} | ' + string
+        if suffix != '':
+            string += f' | {suffix}'
+
+        if print_string:
+            print(f'\r{string}', end="\n" if progress == 1.0 else "")
+        return string
+
 def linmap(x: T, from_range: tuple[T, T], to_range: tuple[T, T]) -> T:
-    return to_range[0] + (x - from_range[0]) * (to_range[1] - to_range[0]) / (from_range[1] - from_range[0])
+    return to_range[0] + (to_range[1] - to_range[0]) * (x - from_range[0])/(from_range[1] - from_range[0])
 
 def expmap(x: T, from_range: tuple[T, T], to_range: tuple[T, T], base: float = np.e) -> T:
-    return (base**(x - from_range[0]) - 1)/(base**(from_range[1] - from_range[0]) - 1) * (to_range[1] - to_range[0]) + to_range[0]
+    return to_range[0] * (to_range[1] / to_range[0])**((x - from_range[0])/(from_range[1] - from_range[0]) * np.log(base))
 
 def progressbar(bar_length: int = 30) -> Callable[[float], str]:
     def f(progress: float):
